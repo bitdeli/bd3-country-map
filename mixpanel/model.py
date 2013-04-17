@@ -1,7 +1,17 @@
 from bitdeli.model import model
 
+def newest(attr, top=1):
+    items = ((iter(hours).next()[0], value)
+             for value, hours in attr.iteritems())
+    if top == 1:
+        return max(items)[1]
+    else:
+        return [(value, datetime.utcfromtimestamp(hour * 3600).isoformat())
+                for hour, value in sorted(items)][-top:]  
+
 @model
 def build(profiles):
     for profile in profiles:
-        for event in profile['events']:
-            yield event, profile.uid
+        props = profile["properties"]
+        if "mp_country_code" in props:
+            yield newest(props["mp_country_code"]), profile.uid
