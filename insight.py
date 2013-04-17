@@ -1,6 +1,8 @@
+import re
 from collections import Counter
+
 from bitdeli import textutil
-from bitdeli.insight import insight
+from bitdeli.insight import insight, segment, segment_label
 from bitdeli.widgets import Text, Bar, Map
 
 TOP_COUNT = 10
@@ -30,7 +32,20 @@ def view(model, params):
     yield Bar(id='top_countries',
               label='Top %d countries' % TOP_COUNT,
               size=(12, 4),
-              segmentable=False,
               data=[(country_label(ccode), count)
                     for ccode, count in countries.most_common(TOP_COUNT)])
+
+def segment_country(params):
+    value = params['params']['top_countries']['value']
+    if len(value) == 2:
+        return value
+    return re.search('\((\w\w)\)$', value).group(1)
     
+@segment
+def segment(model, params):
+    return model[segment_country(params)]
+    
+@segment_label
+def label(segment, model, params):
+    ccode = segment_country(params)
+    return 'Users from %s' % textutil.country_name(ccode)
