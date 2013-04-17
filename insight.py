@@ -18,23 +18,18 @@ def country_users(model):
 
 @insight
 def view(model, params):
-    print list(model.keys())
-    
     yield Text(size=(12, 'auto'),
                label='Showing all users',
                data={'text': "## What is the geographic distribution of users?\n"})
     
-    countries = Counter({ccode: count
-                         for ccode, count in country_users(model)})
+    countries = Counter(dict(country_users(model)))
 
-    label = '{0[0]:,} users in {0[1]:,} countries'
-    totals = (sum(countries.values()),
-              len(countries))
-    
+    label = '{users:,} users in {countries:,} countries'
     yield Map(id='map',
               size=(12, 6),
               data=countries,
-              label=label.format(totals))
+              label=label.format(users=sum(countries.values()),
+                                 countries=len(countries)))
     
     yield Bar(id='top_countries',
               label='Top %d countries' % TOP_COUNT,
