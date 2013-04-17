@@ -43,7 +43,9 @@ def segment_country(params):
     
 @segment
 def segment(model, params):
-    return model[segment_country(params)]
+    print segment_country(params)
+    print model[segment_country(params)]
+    return list(model[segment_country(params)])
     
 @segment_label
 def label(segment, model, params):
