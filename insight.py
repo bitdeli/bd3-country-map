@@ -36,7 +36,7 @@ def view(model, params):
                     for ccode, count in countries.most_common(TOP_COUNT)])
 
 def segment_country(params):
-    label = params['params']['top_countries']['value']['label']
+    label = params['value']['label']
     if len(label) == 2:
         return label
     return re.search('\((\w\w)\)$', label).group(1)
