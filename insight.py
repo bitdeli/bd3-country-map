@@ -17,10 +17,15 @@ def view(model, params):
 
     countries = Counter({ccode: len(uids)
                          for ccode, uids in model.items()})
+
+    label = '{0[0]:,} users in {0[1]:,} countries'
+    totals = (sum(countries.values()),
+              len(countries))
     
     yield Map(id='map',
-          size=(12, 6),
-          data=countries)
+              size=(12, 6),
+              data=countries,
+              label=label.format(totals))
     
     yield Bar(id='top_countries',
               label='Top %d countries' % TOP_COUNT,
