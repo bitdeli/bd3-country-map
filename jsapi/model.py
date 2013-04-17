@@ -1,10 +1,16 @@
 from bitdeli.model import model
 
+def latest_country(events):
+    for tstamp, group, ip, event in events:
+        if 'geo_country_code' in event:
+            return event['geo_country_code']
+        elif 'facebook_country' in event:
+            return event['facebook_country']
+
 @model
 def build(profiles):
     for profile in profiles:
-        events = frozenset(event['$event_name']
-                           for tstamp, group, ip, event in profile['events'])
-        uid = profile.uid
-        for event in events:
-            yield event, uid
+        if 'events' in profile:
+            ccode = latest_country(profile['events'])
+            if ccode:
+                yield ccode, profile.uid
