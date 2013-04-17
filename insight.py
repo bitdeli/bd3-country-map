@@ -11,14 +11,19 @@ def country_label(ccode):
     name = textutil.country_name(ccode)
     return "%s (%s)" % (name, ccode) if name else ccode
 
+def country_users(model):
+    for ccode, uids in model.items():
+        if len(uids) > 0:
+            yield ccode, len(uids)
+
 @insight
 def view(model, params):
     yield Text(size=(12, 'auto'),
                label='Showing all users',
                data={'text': "## What is the geographic distribution of users?\n"})
-
-    countries = Counter({ccode: len(uids)
-                         for ccode, uids in model.items()})
+    
+    countries = Counter({ccode: count
+                         for ccode, count in country_users(model)})
 
     label = '{0[0]:,} users in {0[1]:,} countries'
     totals = (sum(countries.values()),
