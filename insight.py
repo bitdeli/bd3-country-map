@@ -18,6 +18,8 @@ def country_users(model):
 
 @insight
 def view(model, params):
+    print list(model.keys())
+    
     yield Text(size=(12, 'auto'),
                label='Showing all users',
                data={'text': "## What is the geographic distribution of users?\n"})
