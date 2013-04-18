@@ -10,6 +10,15 @@ class TokenInput(Widget):
 
 TOP_COUNT = 10
 
+CONTINENTS = {
+    "Africa":        ["AO","BF","BI","BJ","BW","CD","CF","CG","CI","CM","CV","DJ","DZ","EG","EH","ER","ET","GA","GH","GM","GN","GQ","GW","KE","KM","LR","LS","LY","MA","MG","ML","MR","MU","MW","MZ","NA","NE","NG","RE","RW","SC","SD","SH","SL","SN","SO","ST","SZ","TD","TG","TN","TZ","UG","YT","ZA","ZM","ZW"],
+    "Asia":          ["AE","AF","AM","AP","AZ","BD","BH","BN","BT","CC","CN","CX","CY","GE","HK","ID","IL","IN","IO","IQ","IR","JO","JP","KG","KH","KP","KR","KW","KZ","LA","LB","LK","MM","MN","MO","MV","MY","NP","OM","PH","PK","PS","QA","SA","SG","SY","TH","TJ","TL","TM","TW","UZ","VN","YE"],
+    "Europe":        ["AD","AL","AT","AX","BA","BE","BG","BY","CH","CZ","DE","DK","EE","ES","EU","FI","FO","FR","FX","GB","GG","GI","GR","HR","HU","IE","IM","IS","IT","JE","LI","LT","LU","LV","MC","MD","ME","MK","MT","NL","NO","PL","PT","RO","RS","RU","SE","SI","SJ","SK","SM","TR","UA","VA"],
+    "North America": ["AG","AI","AN","AW","BB","BL","BM","BS","BZ","CA","CR","CU","DM","DO","GD","GL","GP","GT","HN","HT","JM","KN","KY","LC","MF","MQ","MS","MX","NI","PA","PM","PR","SV","TC","TT","US","VC","VG","VI"],
+    "Oceania":       ["AS","AU","CK","FJ","FM","GU","KI","MH","MP","NC","NF","NR","NU","NZ","PF","PG","PN","PW","SB","TK","TO","TV","UM","VU","WF","WS"],
+    "South America": ["AR","BO","BR","CL","CO","EC","FK","GF","GY","PE","PY","SR","UY","VE"]
+}
+
 def unique(events):
     seen = set()
     for event in events:
@@ -26,9 +35,17 @@ def parse_label(label):
         return label
     return re.search('\((\w\w)\)$', label).group(1)
 
-def country_users(model, chosen=[]):
+def get_codes(chosen):
+    for label in chosen:
+        if label in CONTINENTS:
+            for ccode in CONTINENTS[label]:
+                yield ccode
+        else:
+            yield parse_label(label)
+
+def country_users(model, codes=[]):
     for ccode, uids in model.items():
-        if len(chosen) == 0 or ccode in chosen:
+        if len(codes) == 0 or ccode in codes:
             if len(uids) > 0:
                 yield ccode, len(uids)
 
@@ -36,19 +53,21 @@ def country_users(model, chosen=[]):
 def view(model, params):
     chosen = []
     if 'countries' in params:
-        chosen = list(unique([parse_label(label) for label in params['countries']['value']]))
+        chosen = list(unique(params['countries']['value']))
     
     yield Text(size=(12, 'auto'),
                label='Showing all users',
                data={'text': "## What is the geographic distribution of users?\n"})
     
+    choices = [country_label(ccode) for ccode in model.keys()]
+    choices.extend(CONTINENTS.keys())
     yield TokenInput(id='countries',
                      size=(12, 1),
-                     label='Filter countries',
-                     value=[country_label(ccode) for ccode in chosen],
-                     data=[country_label(ccode) for ccode in model.keys()])
+                     label='Filter by country or continent',
+                     value=chosen,
+                     data=choices)
     
-    countries = Counter(dict(country_users(model, chosen)))
+    countries = Counter(dict(country_users(model, list(get_codes(chosen)))))
 
     label = '{users:,} users in {countries:,} countries'
     yield Map(id='map',
