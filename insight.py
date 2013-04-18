@@ -38,10 +38,14 @@ def view(model, params):
                     for ccode, count in countries.most_common(TOP_COUNT)])
 
 def segment_country(params):
-    label = params['value']['label']
-    if len(label) == 2:
-        return label
-    return re.search('\((\w\w)\)$', label).group(1)
+    widget = params['id']
+    if widget == 'map':
+        return params['value']
+    elif widget == 'top_countries':
+        label = params['value']['label']
+        if len(label) == 2:
+            return label
+        return re.search('\((\w\w)\)$', label).group(1)
     
 @segment
 def segment(model, params):
