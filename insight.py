@@ -1,5 +1,5 @@
 import re
-from collections import Counter
+from collections import Counter, namedtuple
 
 from bitdeli import textutil
 from bitdeli.insight import insight, segment, segment_label
@@ -43,23 +43,54 @@ def get_codes(chosen):
         else:
             yield parse_label(label)
 
-def country_users(model, codes=[]):
+def segment_users(uids, segments=None):
+    segmented = uids
+    if segments:
+        # Get intersection of segments
+        for segment in segments:
+            segmented = [uid for uid in segmented if uid in segment]
+    return segmented
+            
+def country_users(model, codes=[], segments=None):
     for ccode, uids in model.items():
-        if len(codes) == 0 or ccode in codes:
-            if len(uids) > 0:
-                yield ccode, len(uids)
+        # Filter by country
+        if len(codes) > 0 and not ccode in codes:
+            continue
+        segmented = segment_users(uids, segments)
+        if len(segmented) > 0:
+            yield ccode, len(segmented)
 
 @insight
 def view(model, params):
+    def test_segment():
+        import random
+        random.seed(21)
+        labels = ['First Segment']#, 'Second']
+        segments = [frozenset(random.sample(model.unique_values(), 100))]
+                    #frozenset(random.sample(model.unique_values(), 200))]
+        return namedtuple('SegmentInfo', ('model', 'segments', 'labels'))\
+                         (model, segments, labels)
+
+    #model = test_segment()
+    has_segments = hasattr(model, 'segments')
+    omodel = model.model if has_segments else model
+    
     chosen = []
     if 'countries' in params:
         chosen = list(unique(params['countries']['value']))
     
+    text_label = 'Showing all users'
+    if has_segments:
+        if len(model.segments) > 1:
+            text_label = 'Showing users belonging in both segments'
+        else:
+            text_label = 'Showing a single user segment'
+    
     yield Text(size=(12, 'auto'),
-               label='Showing all users',
+               label=text_label,
                data={'text': "## What is the geographic distribution of users?\n"})
     
-    choices = [country_label(ccode) for ccode in model.keys()]
+    choices = [country_label(ccode) for ccode in omodel.keys()]
     choices.extend(CONTINENTS.keys())
     yield TokenInput(id='countries',
                      size=(12, 1),
@@ -67,7 +98,9 @@ def view(model, params):
                      value=chosen,
                      data=choices)
     
-    countries = Counter(dict(country_users(model, list(get_codes(chosen)))))
+    countries = Counter(dict(country_users(omodel,
+                                           list(get_codes(chosen)),
+                                           model.segments if has_segments else None)))
 
     label = '{users:,} users in {countries:,} countries'
     yield Map(id='map',
@@ -91,9 +124,17 @@ def segment_country(params):
     
 @segment
 def segment(model, params):
-    return model[segment_country(params)]
-    
+    has_segments = hasattr(model, 'segments')
+    omodel = model.model if has_segments else model
+    return segment_users(omodel[segment_country(params)],
+                         model.segments if has_segments else None)
+
 @segment_label
 def label(segment, model, params):
     ccode = segment_country(params)
-    return 'Users from %s' % textutil.country_name(ccode)
+    segment_name = 'Users'
+    if hasattr(model, 'labels'):
+        segment_name = model.labels[0]
+    return '%s from %s' % (segment_name,
+                           textutil.country_name(ccode))
+
