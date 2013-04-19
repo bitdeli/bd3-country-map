@@ -4,11 +4,7 @@ from bitdeli.model import model, segment_model
 def newest(attr, top=1):
     items = ((iter(hours).next()[0], value)
              for value, hours in attr.iteritems())
-    if top == 1:
-        return max(items)[1]
-    else:
-        return [(value, datetime.utcfromtimestamp(hour * 3600).isoformat())
-                for hour, value in sorted(items)][-top:]  
+    return max(items)[1]
 
 @model
 def build(profiles):
