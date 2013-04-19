@@ -1,4 +1,5 @@
-from bitdeli.model import model
+from collections import namedtuple
+from bitdeli.model import model, segment_model
 import GeoIP
 
 geoip = GeoIP.open('/usr/share/geoip/GeoLiteCity.dat', GeoIP.GEOIP_STANDARD)
@@ -19,6 +20,10 @@ def build(profiles):
     for profile in profiles:
         if 'events' in profile:
             ccode = latest_country(profile['events'])
-            print ccode
             if ccode:
                 yield ccode, profile.uid
+
+@segment_model
+def segment(model, segments, labels):
+    return namedtuple('SegmentInfo', ('model', 'segments', 'labels'))\
+                     (model, segments, labels)
