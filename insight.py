@@ -4,6 +4,7 @@ from collections import Counter, namedtuple
 from bitdeli import textutil
 from bitdeli.insight import insight, segment, segment_label
 from bitdeli.widgets import Widget, Text, Bar, Map
+from discodb.query import Literal
 
 class TokenInput(Widget):
     pass
@@ -43,33 +44,30 @@ def get_codes(chosen):
         else:
             yield parse_label(label)
 
-def segment_users(uids, segments=None):
-    segmented = uids
-    if segments:
-        # Get intersection of segments
-        for segment in segments:
-            segmented = [uid for uid in segmented if uid in segment]
-    return segmented
+def segment_users(model, key, view):
+    return model.query(Literal(key), view=view)
             
-def country_users(model, codes=[], segments=None):
-    for ccode, uids in model.items():
+def country_users(model, codes, view):
+    for ccode in model:
         # Filter by country
         if len(codes) > 0 and not ccode in codes:
             continue
-        segmented = segment_users(uids, segments)
-        if len(segmented) > 0:
-            yield ccode, len(segmented)
+        n = len(segment_users(model, ccode, view))
+        if n > 0:
+            yield ccode, n
 
 @insight
 def view(model, params):
     def test_segment():
         import random
+        from bitdeli.segment_discodb import make_segment_view
         random.seed(21)
         labels = ['First Segment']#, 'Second']
         segments = [frozenset(random.sample(model.unique_values(), 100))]
                     #frozenset(random.sample(model.unique_values(), 200))]
-        return namedtuple('SegmentInfo', ('model', 'segments', 'labels'))\
-                         (model, segments, labels)
+        view = make_segment_view(model, segments)
+        return namedtuple('SegmentInfo', ('model', 'segments', 'labels', 'view'))\
+                         (model, segments, labels, view)
 
     #model = test_segment()
     has_segments = hasattr(model, 'segments')
@@ -100,7 +98,7 @@ def view(model, params):
     
     countries = Counter(dict(country_users(omodel,
                                            list(get_codes(chosen)),
-                                           model.segments if has_segments else None)))
+                                           model.view if has_segments else None)))
 
     label = '{users:,} users in {countries:,} countries'
     yield Map(id='map',
@@ -124,10 +122,11 @@ def segment_country(params):
     
 @segment
 def segment(model, params):
-    has_segments = hasattr(model, 'segments')
+    has_segments = hasattr(model, 'view')
     omodel = model.model if has_segments else model
-    return segment_users(omodel[segment_country(params)],
-                         model.segments if has_segments else None)
+    return segment_users(omodel,
+                         segment_country(params),
+                         model.view if has_segments else None)
 
 @segment_label
 def label(segment, model, params):
