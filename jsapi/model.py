@@ -1,3 +1,4 @@
+from collections import namedtuple
 from bitdeli.model import model
 import GeoIP
 
@@ -21,3 +22,8 @@ def build(profiles):
             ccode = latest_country(profile['events'])
             if ccode:
                 yield ccode, profile.uid
+
+@segment_model
+def segment(model, segments, labels):
+    return namedtuple('SegmentInfo', ('model', 'segments', 'labels'))\
+                     (model, segments, labels)
