@@ -1,5 +1,6 @@
 from collections import namedtuple
 from bitdeli.model import model, segment_model
+from bitdeli.segment_discodb import make_segment_view
 
 def newest(attr, top=1):
     items = ((iter(hours).next()[0], value)
@@ -15,5 +16,5 @@ def build(profiles):
 
 @segment_model
 def segment(model, segments, labels):
-    return namedtuple('SegmentInfo', ('model', 'segments', 'labels'))\
-                     (model, segments, labels)
+    return namedtuple('SegmentInfo', ('model', 'segments', 'labels', 'view'))\
+                     (model, segments, labels, make_segment_view(model, segments))
