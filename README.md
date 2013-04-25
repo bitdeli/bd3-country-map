@@ -6,3 +6,7 @@ When segments are selected, the data on the map is filtered by the
 intersection of segments (i.e. users who belong in all selected
 segments). New user segments can be created by clicking on a
 country on the map or a bar in the top countries chart.
+
+
+[![Bitdeli Badge](https://d2weczhvl823v0.cloudfront.net/bitdeli/bd3-country-map/trend.png)](https://bitdeli.com/free "Bitdeli Badge")
+
