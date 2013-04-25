@@ -11,9 +11,9 @@ def latest_country(events):
         # if 'country_code' in event:
         #     return event['country_code']
         if 'ip' in event:
-            return geoip.record_by_addr(event['ip'])
+            return geoip.record_by_addr(event['ip'])['country_code']
         else:
-            return geoip.record_by_addr(ip)
+            return geoip.record_by_addr(ip)['country_code']
 
 @model
 def build(profiles):
