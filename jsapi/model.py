@@ -10,10 +10,8 @@ def latest_country(events):
         # Adding support for custom country code properties:
         # if 'country_code' in event:
         #     return event['country_code']
-        if 'ip' in event:
-            return geoip.record_by_addr(event['ip'])['country_code']
-        else:
-            return geoip.record_by_addr(ip)['country_code']
+        record = geoip.record_by_addr(event.get('ip', ip))
+        return record['country_code'] if record else None
 
 @model
 def build(profiles):
