@@ -1,3 +1,4 @@
+from itertools import chain
 from collections import namedtuple
 from bitdeli.model import model, segment_model
 from bitdeli.segment_discodb import make_segment_view
@@ -10,18 +11,19 @@ def latest_country(events):
         # Adding support for custom country code properties:
         # if 'country_code' in event:
         #     return event['country_code']
-        if 'ip' in event:
-            return geoip.record_by_addr(event['ip'])['country_code']
-        else:
-            return geoip.record_by_addr(ip)['country_code']
+        record = geoip.record_by_addr(event.get('ip', ip))
+        if record:
+            return record['country_code']
 
 @model
 def build(profiles):
     for profile in profiles:
-        if 'events' in profile:
-            ccode = latest_country(profile['events'])
-            if ccode:
-                yield ccode, profile.uid
+        source_events = chain(profile.get('events', []),
+                              profile.get('$pageview', []),
+                              profile.get('$dom_event', []))
+        ccode = latest_country(source_events)
+        if ccode:
+            yield ccode, profile.uid
 
 @segment_model
 def segment(model, segments, labels):
